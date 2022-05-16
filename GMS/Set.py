@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 
 class Set:
 
@@ -47,7 +49,7 @@ class Set:
     def union_element_inplace(self, b) -> None:
         raise NotImplementedError("Method union_element_inplace(self, SetElement) is not implemented")
 
-    def contains(self, b) -> boolean:
+    def contains(self, b) -> bool:
         return self.__contains__(b)
 
     def __contains__(self, item):
@@ -80,7 +82,7 @@ class Set:
     def to_array(self) -> List:
         raise NotImplementedError("Method to_array(self) is not implemented")
 
-    def __eq__(self, other) -> boolean:
+    def __eq__(self, other) -> bool:
         raise NotImplementedError("Method __eq__(self) is not implemented")
 
     def __ne__(self, other):
