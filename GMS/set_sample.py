@@ -1,6 +1,6 @@
 from pyspark.sql import Row
 from pyspark.sql import SparkSession
-from GMS.VectorSet import VectorSet
+from VectorSet import VectorSet
 
 spark = SparkSession.builder.getOrCreate()
 # 1  -  2
@@ -17,7 +17,7 @@ df.printSchema()
 
 
 print("Set")
-set = VectorSet(df_row = df.filter("vertex_id==1"))
+set = VectorSet(df_row=df.filter("vertex_id==1"))
 set.intersect(df.filter("vertex_id==2")).show()
 set.union(df.filter("vertex_id==2")).show()
 set.intersect_count(df.filter("vertex_id==2")).show()
