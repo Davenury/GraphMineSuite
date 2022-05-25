@@ -16,7 +16,7 @@ def split_vertexes(graph: Graph, k: int) -> Tuple[Graph, Graph]:
     to_remove = []
     stayed = []
     for vertex in graph:
-        if vertex[1].cardinality() < k:
+        if vertex[1].cardinality() < k - 1:
             to_remove.append(vertex)
         else:
             stayed.append(vertex)
@@ -59,7 +59,6 @@ def dir(graph: Graph) -> Graph:
 def k_clique(graph: Graph, k: int):
 
     def count(i: int, g: GraphMap, c_i: Set) -> int:
-        print(i, c_i.to_array())
         if i == k:
             return c_i.cardinality()
         else:
@@ -78,6 +77,6 @@ def k_clique(graph: Graph, k: int):
     vertex_id_to_vertex = {
         vertex_id: vertex for vertex_id, vertex in new_graph}
 
-    return sum([count(2, vertex_id_to_vertex, vertex)for (_vertex_id, vertex) in new_graph])
+    return sum([count(2, vertex_id_to_vertex, vertex)for (vertex_id, vertex) in new_graph])
 
     return sc.parallelize(new_graph).map(lambda vertex: count(2, vertex_id_to_vertex, vertex[1])).sum()
