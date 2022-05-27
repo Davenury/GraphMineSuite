@@ -31,4 +31,4 @@ for (idx, neighbours) in enumerate(neighbours):
 # new_graph = degeneracy_order(graph, 2)
 
 # print(new_graph)
-print(k_clique(graph, 3))
+print(k_clique(graph, 3, VectorSetRDD))
