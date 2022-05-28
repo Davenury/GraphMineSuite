@@ -3,3 +3,6 @@ env
 env_linux
 twitter
 twitter.tar.gz
+
+**/__pycache__
+**.pyc
