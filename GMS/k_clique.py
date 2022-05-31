@@ -1,5 +1,5 @@
 from pandas import DataFrame
-from typing import List, Tuple, Dict, Type, TypeVar
+from typing import List, Tuple, Dict, Type
 from Set import Set
 from pyspark.sql import SparkSession
 from inspect import getfile
@@ -62,17 +62,21 @@ def dir(graph: Graph, set_class: Type[Set]) -> Graph:
     return [(vertex_id, normalize_edges(vertex, vertex_id)) for (vertex_id, vertex) in graph]
 
 
+def abstract_count(k: int, set_class: Type[Set], i: int, g: GraphMap, c_i: Set) -> int:
+    if i == k:
+        return c_i.cardinality()
+    else:
+        ci = 0
+        for v in c_i.to_array():
+            c_i1 = g.get(v, set_class.from_array([])).intersect(c_i)
+            ci += abstract_count(k, set_class, i+1, g, c_i1)
+        return ci
+
+
 def k_clique(graph: Graph, k: int, set_class: Type[Set]):
 
-    def count(i: int, g: GraphMap, c_i: Set) -> int:
-        if i == k:
-            return c_i.cardinality()
-        else:
-            ci = 0
-            for v in c_i.to_array():
-                c_i1 = g[v].intersect(c_i)
-                ci += count(i+1, g, c_i1)
-            return ci
+    def count(i: int, g: GraphMap, c_i: Set):
+        return abstract_count(k, set_class, i, g, c_i)
 
     new_graph = degeneracy_order(graph, k, set_class)
 
@@ -86,15 +90,8 @@ def k_clique(graph: Graph, k: int, set_class: Type[Set]):
 
 def k_clique_parallel(graph: Graph, k: int, set_class: Type[Set]):
 
-    def count(i: int, g: GraphMap, c_i: Set) -> int:
-        if i == k:
-            return c_i.cardinality()
-        else:
-            ci = 0
-            for v in c_i.to_array():
-                c_i1 = g[v].intersect(c_i)
-                ci += count(i+1, g, c_i1)
-            return ci
+    def count(i: int, g: GraphMap, c_i: Set):
+        return abstract_count(k, set_class, i, g, c_i)
 
     new_graph = degeneracy_order(graph, k, set_class)
 

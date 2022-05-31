@@ -1,8 +1,12 @@
 from os import listdir
 from re import S
-from typing import List
+from Set import Set
+from typing import List, Type, Tuple
 from pyspark.sql import DataFrame, Row
 from pyspark.sql import SparkSession
+
+
+Graph = List[Tuple[int, Set]]
 
 
 class Vertex:
@@ -79,8 +83,17 @@ class Vertex:
     def to_data_frame_row(self) -> Row:
         return Row(vertex_id=self.id, neighbors=self.neighbours)
 
+    def to_vectorset(self, set_class: Type[Set]) -> Tuple[int, Set]:
+        return (self.id, set_class.from_array(self.neighbours))
 
-def read_graph_from_path(path: str) -> DataFrame:
+
+def read_graph_from_path(path: str, set_class: Type[Set]) -> Graph:
+    files = [file.split(".") for file in listdir(path)]
+    vertexes_ids = [int(file[0]) for file in files if file[1] == "edges"]
+    return [Vertex(vertex_id, path).to_vectorset(set_class) for vertex_id in vertexes_ids]
+
+
+def read_graph_dataframe_from_path(path: str) -> DataFrame:
     spark = SparkSession.builder.getOrCreate()
     files = [file.split(".") for file in listdir(path)]
     vertexes_ids = [int(file[0]) for file in files if file[1] == "edges"]
@@ -88,7 +101,3 @@ def read_graph_from_path(path: str) -> DataFrame:
         [Vertex(vertex_id, path).to_data_frame_row()
          for vertex_id in vertexes_ids]
     )
-
-
-df = read_graph_from_path("./twitter")
-df.show()
