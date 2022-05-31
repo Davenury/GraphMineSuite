@@ -7,8 +7,11 @@ from pyspark.sql import SparkSession
 
 class VectorSetRDD(Set):
 
-    spark = SparkSession.builder.getOrCreate()
-    sc = spark.sparkContext
+    sc = None
+
+    @staticmethod
+    def set_spark_context(spark_context: SparkContext):
+        VectorSetRDD.sc = spark_context
 
     # Set interface has a lot of constructors. As Python doesn't allow overriding methods, here's something we can do
     def __init__(self, rdd: RDD, **kwargs) -> VectorSetRDD:

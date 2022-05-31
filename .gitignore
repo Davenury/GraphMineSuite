@@ -1,8 +1,10 @@
 .idea
+.tool-versions
 env
 env_linux
 twitter
 twitter.tar.gz
+labsuser.pem
 
 **/__pycache__
 **.pyc

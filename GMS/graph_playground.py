@@ -1,16 +1,36 @@
-from pyspark.sql import Row
-from pyspark.sql import SparkSession
+from pyspark import SparkContext
+from Set import Set
 from VectorSetRDD import VectorSetRDD
 from VectorSetRoaring import VectorSetRoaring
-from typing import List, Callable, Tuple
-from k_clique import degeneracy_order, k_clique, k_clique_parallel, add_class
+from typing import List, Callable, Tuple, Type
+import k_clique_module
+from k_clique_module import degeneracy_order, k_clique, k_clique_parallel
 from time import time
 from graph_loading import read_graph_from_path
+from inspect import getfile
+import sys
+import boto3
 
-spark = SparkSession.builder.getOrCreate()
-sc = spark.sparkContext
+
+# spark = SparkSession.builder.getOrCreate()
+sc = SparkContext(appName="GraphProcessing")
+
+s3 = boto3.resource('s3')
 
 
+def load_spark_context():
+
+    def add_class(set_class: Type[Set]):
+        sc.addFile(getfile(set_class))
+
+    add_class(Set)
+    add_class(VectorSetRDD)
+    add_class(VectorSetRoaring)
+    sc.addFile(k_clique_module.__file__)
+    VectorSetRDD.set_spark_context(sc)
+
+
+load_spark_context()
 # 0  -  1
 # |  \
 # 3  -  2
@@ -27,17 +47,17 @@ for (idx, neighbours) in enumerate(neighbours):
     graph_roaring_sets.append((idx, VectorSetRoaring.from_array(neighbours)))
 
 
-add_class(VectorSetRDD)
-add_class(VectorSetRoaring)
-
-
 def measure_time(function: Callable[[], int], class_name: str, function_name: str):
     start_time = time()
     result = function()
     end_time = time()
 
-    print(f"{class_name} {function_name} \n result: {result} time: {end_time-start_time}")
-    return (result, end_time-start_time)
+    object = s3.Object(
+        'gms-us-east-1', f'results/{class_name}/{function_name}/result.txt')
+
+    result = f"{class_name} {function_name} \n result: {result} time: {end_time-start_time}".encode(
+        "ascii")
+    object.put(Body=result)
 
 
 def run_small_graph():
@@ -46,7 +66,7 @@ def run_small_graph():
     measure_time(
         lambda: k_clique(graph_roaring_sets, 3, VectorSetRoaring), "VectorSetRoaring", "k_clique")
     measure_time(
-        lambda: k_clique_parallel(graph_roaring_sets, 3, VectorSetRoaring), "VectorSetRoaring", "k_clique_parallel")
+        lambda: k_clique_parallel(graph_roaring_sets, 3, VectorSetRoaring, sc), "VectorSetRoaring", "k_clique_parallel")
 
 
 def run_twitter_graph():
@@ -57,7 +77,18 @@ def run_twitter_graph():
     measure_time(
         lambda: k_clique(graph, 3, VectorSetRoaring), "VectorSetRoaring", "k_clique")
     measure_time(
-        lambda: k_clique_parallel(graph, 3, VectorSetRoaring), "VectorSetRoaring", "k_clique_parallel")
+        lambda: k_clique_parallel(graph, 3, VectorSetRoaring, sc), "VectorSetRoaring", "k_clique_parallel")
 
 
-run_twitter_graph()
+# run_small_graph()
+
+# run_twitter_graph()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: graph processing  ", file=sys.stderr)
+        exit(-1)
+    graph_folder = sys.argv[1]
+    run_twitter_graph()
+    sc.stop()

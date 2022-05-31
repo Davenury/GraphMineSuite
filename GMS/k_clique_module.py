@@ -2,20 +2,11 @@ from pandas import DataFrame
 from typing import List, Tuple, Dict, Type
 from Set import Set
 from pyspark.sql import SparkSession
-from inspect import getfile
-
+from pyspark import SparkContext
 
 Graph = List[Tuple[int, Set]]
 
 GraphMap = Dict[int, Set]
-
-spark = SparkSession.builder.getOrCreate()
-sc = spark.sparkContext
-sc.addFile(getfile(Set))
-
-
-def add_class(set_class: Type[Set]):
-    sc.addFile(getfile(set_class))
 
 
 def split_vertexes(graph: Graph, k: int) -> Tuple[Graph, Graph]:
@@ -88,7 +79,7 @@ def k_clique(graph: Graph, k: int, set_class: Type[Set]):
     return sum([count(2, vertex_id_to_vertex, vertex)for (vertex_id, vertex) in new_graph])
 
 
-def k_clique_parallel(graph: Graph, k: int, set_class: Type[Set]):
+def k_clique_parallel(graph: Graph, k: int, set_class: Type[Set], sc: SparkContext):
 
     def count(i: int, g: GraphMap, c_i: Set):
         return abstract_count(k, set_class, i, g, c_i)

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# aws s3 mb s3://gms-us-east-1
+# aws s3 cp ./GMS s3://gms-us-east-1/GMS --recursive
+# aws s3 cp ./twitter s3://gms-us-east-1/twitter --recursive
+aws s3 cp ./bootstrap.sh s3://gms-us-east-1/
+
+cluster_id=$(aws emr create-cluster --name 'GMS cluster' --use-default-roles --release-label emr-5.35.0 --instance-type m5.xlarge --instance-count 3 --bootstrap-actions Path="s3://gms-us-east-1/bootstrap.sh" | grep "ClusterId" | awk --field-separator=":" '{print substr($2,3,length($2)-4)}')
+
+echo $cluster_id
+# aws emr add-steps --cluster-id $cluster_id --steps Type=spark,Name=GraphProcessing,Args=[--deploy-ode,cluster,--master,yarn,--conf,spark.yarn.submit.waitAppCompletion=true,--num-executors,3,--executor-cores,3,--executor-memory,10g,s3://gms-us-east-1/GMS/graph_playground.py,s3://gms-us-east-1/twitter,s3://gms-us-east-1/],ActionOnFailure=CONTINUE
