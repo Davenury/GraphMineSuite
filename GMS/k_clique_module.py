@@ -64,31 +64,49 @@ def abstract_count(k: int, set_class: Type[Set], i: int, g: GraphMap, c_i: Set) 
         return ci
 
 
-def k_clique(graph: Graph, k: int, set_class: Type[Set]):
+def log_percentage(i, percentage):
+    divided = i/percentage
+    if divided - round(divided) < 0.01 and 0 < divided < 100:
+        print(f"Percentage: {round(divided)}, vertex id: {i}")
 
-    def count(i: int, g: GraphMap, c_i: Set):
+
+def k_clique(graph: Graph, k: int, set_class: Type[Set]):
+    percentage = len(graph) / 100
+
+    def count(i: int, g: GraphMap, c_i: Set, vertex_idx: int):
+        log_percentage(vertex_idx, percentage)
         return abstract_count(k, set_class, i, g, c_i)
 
     new_graph = degeneracy_order(graph, k, set_class)
 
     new_graph = dir(new_graph, set_class)
 
+    percentage = len(new_graph) / 100
+
     vertex_id_to_vertex = {
         vertex_id: vertex for vertex_id, vertex in new_graph}
 
-    return sum([count(2, vertex_id_to_vertex, vertex)for (vertex_id, vertex) in new_graph])
+    print("Start processing graph")
+
+    return sum([count(2, vertex_id_to_vertex, vertex, vertex_id)for (vertex_id, vertex) in new_graph])
 
 
 def k_clique_parallel(graph: Graph, k: int, set_class: Type[Set], sc: SparkContext):
+    percentage = len(graph) / 100
 
-    def count(i: int, g: GraphMap, c_i: Set):
+    def count(i: int, g: GraphMap, c_i: Set, vertex_idx: int):
+        log_percentage(vertex_idx, percentage)
         return abstract_count(k, set_class, i, g, c_i)
 
     new_graph = degeneracy_order(graph, k, set_class)
 
     new_graph = dir(new_graph, set_class)
 
+    percentage = len(new_graph) / 100
+
     vertex_id_to_vertex = {
         vertex_id: vertex for vertex_id, vertex in new_graph}
 
-    return sc.parallelize(new_graph).map(lambda vertex: count(2, vertex_id_to_vertex, vertex[1])).sum()
+    print("Start processing graph")
+
+    return sc.parallelize(new_graph).map(lambda vertex: count(2, vertex_id_to_vertex, vertex[1], vertex[0])).sum()

@@ -1,15 +1,16 @@
-from pyspark import SparkContext
-from Set import Set
-from VectorSetRDD import VectorSetRDD
-from VectorSetRoaring import VectorSetRoaring
-from typing import List, Callable, Tuple, Type
-import k_clique_module
-from k_clique_module import degeneracy_order, k_clique, k_clique_parallel
-from time import time
-from graph_loading import read_graph_from_path
-from inspect import getfile
-import sys
 import boto3
+import sys
+from inspect import getfile
+from graph_loading import read_graph_from_path
+from time import time
+from k_clique_module import degeneracy_order, k_clique, k_clique_parallel
+import k_clique_module
+from typing import List, Callable, Tuple, Type
+from VectorSetRoaring import VectorSetRoaring
+from VectorSetRDD import VectorSetRDD
+from Set import Set
+from pyspark import SparkContext
+import pathlib
 
 
 # spark = SparkSession.builder.getOrCreate()
@@ -52,12 +53,8 @@ def measure_time(function: Callable[[], int], class_name: str, function_name: st
     result = function()
     end_time = time()
 
-    object = s3.Object(
-        'gms-us-east-1', f'results/{class_name}/{function_name}/result.txt')
-
-    result = f"{class_name} {function_name} \n result: {result} time: {end_time-start_time}".encode(
-        "ascii")
-    object.put(Body=result)
+    result = f"{class_name} {function_name} \n result: {result} time: {end_time-start_time}"
+    print(result)
 
 
 def run_small_graph():
@@ -70,25 +67,19 @@ def run_small_graph():
 
 
 def run_twitter_graph():
-    graph = read_graph_from_path("./twitter", VectorSetRDD)
-    measure_time(
-        lambda: k_clique(graph, 3, VectorSetRDD), "VectorSetRDD", "k_clique")
+    k = 3
+
     graph = read_graph_from_path("./twitter", VectorSetRoaring)
     measure_time(
-        lambda: k_clique(graph, 3, VectorSetRoaring), "VectorSetRoaring", "k_clique")
+        lambda: k_clique(graph, k, VectorSetRoaring), "VectorSetRoaring", "k_clique")
     measure_time(
-        lambda: k_clique_parallel(graph, 3, VectorSetRoaring, sc), "VectorSetRoaring", "k_clique_parallel")
+        lambda: k_clique_parallel(graph, k, VectorSetRoaring, sc), "VectorSetRoaring", "k_clique_parallel")
+
+    graph = read_graph_from_path("./twitter", VectorSetRDD)
+    measure_time(
+        lambda: k_clique(graph, k, VectorSetRDD), "VectorSetRDD", "k_clique")
 
 
 # run_small_graph()
 
-# run_twitter_graph()
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: graph processing  ", file=sys.stderr)
-        exit(-1)
-    graph_folder = sys.argv[1]
-    run_twitter_graph()
-    sc.stop()
+run_twitter_graph()
