@@ -13,9 +13,9 @@ from Set import Set
 from pyspark import SparkContext
 from pyspark.sql import SparkSession
 import logging
+from pyroaring import BitMap
 
-
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(encoding='utf-8', level=logging.WARNING)
 
 spark = SparkSession.builder.getOrCreate()
 sc = spark.sparkContext
@@ -32,6 +32,7 @@ def load_spark_context():
     add_class(VectorSetRDD)
     add_class(VectorSetRoaring)
     add_class(VectorSetDataFrame)
+    add_class(BitMap)
     sc.addFile(k_clique_module.__file__)
     VectorSetRDD.set_spark_context(sc)
     VectorSetDataFrame.set_spark_session(spark)
@@ -63,16 +64,16 @@ def measure_time(function: Callable[[], int], class_name: str, function_name: st
     end_time = time()
 
     result = f"{class_name} {function_name} \n result: {result} time: {end_time-start_time}"
-    logging.info(result)
+    print(result)
 
 
 def run_small_graph(k):
     measure_time(
-        lambda: k_clique(graph_rdd_sets, k, VectorSetRDD), "VectorSetRDD", "k_clique")
-    measure_time(
         lambda: k_clique(graph_roaring_sets, k, VectorSetRoaring), "VectorSetRoaring", "k_clique")
     measure_time(
         lambda: k_clique_parallel(graph_roaring_sets, k, VectorSetRoaring, sc), "VectorSetRoaring", "k_clique_parallel")
+    measure_time(
+        lambda: k_clique(graph_rdd_sets, k, VectorSetRDD), "VectorSetRDD", "k_clique")
     measure_time(
         lambda: k_clique(graph_dataframe_sets, k, VectorSetDataFrame), "VectorSetDataframe", "k_clique")
     # measure_time(
@@ -95,6 +96,6 @@ def run_twitter_graph(k):
         lambda: k_clique(graph, k, VectorSetDataFrame), "VectorSetDataframe", "k_clique")
 
 
-run_small_graph(3)
+# run_small_graph(3)
 
-# run_twitter_graph(3)
+run_twitter_graph(3)

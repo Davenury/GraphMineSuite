@@ -1,4 +1,3 @@
-from pandas import DataFrame
 from typing import List, Tuple, Dict, Type
 from Set import Set
 from pyspark.sql import SparkSession
@@ -68,7 +67,7 @@ def abstract_count(k: int, set_class: Type[Set], i: int, g: GraphMap, c_i: Set) 
 def log_percentage(i, percentage):
     divided = i/percentage
     if divided - round(divided) < 0.01 and 0 < divided < 100:
-        logging.debug(f"Percentage: {round(divided)}, vertex id: {i}")
+        logging.info(f"Percentage: {round(divided)}, vertex id: {i}")
 
 
 def k_clique(graph: Graph, k: int, set_class: Type[Set]):
@@ -85,7 +84,7 @@ def k_clique(graph: Graph, k: int, set_class: Type[Set]):
     vertex_id_to_vertex = {
         vertex_id: vertex for vertex_id, vertex in new_graph}
 
-    logging.debug("Start processing")
+    logging.info("Start processing")
 
     return sum([count(2, vertex_id_to_vertex, vertex, vertex_id)for (vertex_id, vertex) in new_graph])
 
@@ -104,6 +103,6 @@ def k_clique_parallel(graph: Graph, k: int, set_class: Type[Set], sc: SparkConte
     vertex_id_to_vertex = {
         vertex_id: vertex for vertex_id, vertex in new_graph}
 
-    logging.debug("Start processing")
+    logging.info("Start processing")
 
     return sc.parallelize(new_graph).map(lambda vertex: count(2, vertex_id_to_vertex, vertex[1], vertex[0])).sum()

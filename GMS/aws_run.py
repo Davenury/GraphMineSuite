@@ -8,8 +8,9 @@ import os
 import shutil
 from distutils.dir_util import copy_tree
 import logging
+from pyroaring import BitMap
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 path = pathlib.Path(__file__).parent.resolve()
 current_directory = pathlib.Path().resolve()
@@ -32,6 +33,14 @@ print(current_directory.__str__())
 print(os.listdir(current_directory.__str__()))
 print("results: ", "\n".join(result))
 
+# try:
+#     from pip._internal.operations import freeze
+# except ImportError:  # pip < 10.0
+#     from pip.operations import freeze
+
+# print("Freeze: ", "\n".join(list(freeze.freeze())))
+
+
 sc = SparkContext(appName="GraphProcessing")
 
 s3 = boto3.resource('s3')
@@ -49,6 +58,7 @@ def load_spark_context():
     add_class(Set)
     add_class(VectorSetRDD)
     add_class(VectorSetRoaring)
+    add_class(BitMap)
     sc.addFile(k_clique_module.__file__)
     VectorSetRDD.set_spark_context(sc)
 
@@ -70,7 +80,7 @@ def measure_time(function: Callable[[], int], class_name: str, function_name: st
     result = f"{class_name} {function_name} \n result: {result} time: {end_time-start_time}".encode(
         "ascii")
     object.put(Body=result)
-    logging.info(result)
+    print(result)
 
 
 def run_twitter_graph(k):

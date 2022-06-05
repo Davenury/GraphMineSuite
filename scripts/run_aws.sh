@@ -6,7 +6,7 @@ directory=$(dirname $0)
 echo $directory
 aws s3 mb s3://$bucket
 aws s3 cp $directory/../GMS s3://$bucket/GMS --recursive
-aws s3 cp $directory/../twitter s3://$bucket/twitter --recursive
+# aws s3 cp $directory/../twitter s3://$bucket/twitter --recursive
 aws s3 cp $directory/bootstrap.sh s3://$bucket/
 
 echo $bucket
