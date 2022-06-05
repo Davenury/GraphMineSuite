@@ -7,7 +7,9 @@ import pathlib
 import os
 import shutil
 from distutils.dir_util import copy_tree
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 
 path = pathlib.Path(__file__).parent.resolve()
 current_directory = pathlib.Path().resolve()
@@ -68,28 +70,32 @@ def measure_time(function: Callable[[], int], class_name: str, function_name: st
     result = f"{class_name} {function_name} \n result: {result} time: {end_time-start_time}".encode(
         "ascii")
     object.put(Body=result)
-    print(result)
+    logging.info(result)
 
 
-def run_twitter_graph():
+def run_twitter_graph(k):
     from VectorSetRoaring import VectorSetRoaring
     from VectorSetRDD import VectorSetRDD
+    from VectorSetDataFrame import VectorSetDataFrame
     from graph_loading import read_graph_from_path
     from k_clique_module import k_clique, k_clique_parallel
 
-    k = 5
-    graph = read_graph_from_path("./twitter", VectorSetRDD)
-    measure_time(
-        lambda: k_clique(graph, k, VectorSetRDD), "VectorSetRDD", "k_clique")
     graph = read_graph_from_path("./twitter", VectorSetRoaring)
     measure_time(
         lambda: k_clique(graph, k, VectorSetRoaring), "VectorSetRoaring", "k_clique")
     measure_time(
         lambda: k_clique_parallel(graph, k, VectorSetRoaring, sc), "VectorSetRoaring", "k_clique_parallel")
 
+    graph = read_graph_from_path("./twitter", VectorSetRDD)
+    measure_time(
+        lambda: k_clique(graph, k, VectorSetRDD), "VectorSetRDD", "k_clique")
 
-# run_small_graph()
+    graph = read_graph_from_path("./twitter", VectorSetDataFrame)
+    measure_time(
+        lambda: k_clique(
+            graph, k, VectorSetDataFrame), "VectorSetDataFrame", "k_clique"
+    )
 
 
 if __name__ == '__main__':
-    run_twitter_graph()
+    run_twitter_graph(5)

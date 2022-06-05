@@ -24,7 +24,7 @@ class VectorSetRDD(Set):
 
     @staticmethod
     def from_array(list: list) -> VectorSetRDD:
-        rdd = VectorSetRDD.sc.parallelize(list)
+        rdd = VectorSetRDD.sc.parallelize(list).cache()
         return VectorSetRDD(rdd)
 
     def diff(self: VectorSetRDD, b: VectorSetRDD) -> VectorSetRDD:

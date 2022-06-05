@@ -1,10 +1,13 @@
 #!/bin/sh
 
 bucket="gms-us-east-1"
+
+directory=$(dirname $0)
+echo $directory
 aws s3 mb s3://$bucket
-aws s3 cp ./GMS s3://$bucket/GMS --recursive
-aws s3 cp ./twitter s3://$bucket/twitter --recursive
-aws s3 cp ./bootstrap.sh s3://$bucket/
+aws s3 cp $directory/../GMS s3://$bucket/GMS --recursive
+aws s3 cp $directory/../twitter s3://$bucket/twitter --recursive
+aws s3 cp $directory/bootstrap.sh s3://$bucket/
 
 echo $bucket
 cluster_id=$(aws emr create-cluster --applications Name=Spark Name=Zeppelin --name 'GMS cluster' --ec2-attributes '{"KeyName":"vockey"}' --use-default-roles --enable-debugging --log-uri "s3n://$bucket/elasticmapreduce/" --release-label emr-5.35.0 --instance-type m5.xlarge --instance-count 3 --bootstrap-actions '[{"Path":"'"s3://$bucket/bootstrap.sh"'","Args":["example"],"Name":"Bootstrap action"}]' | grep "ClusterId" | awk --field-separator=":" '{print substr($2,3,length($2)-4)}')
