@@ -3,7 +3,7 @@ from pyspark.sql import SparkSession
 from VectorSetRDD import VectorSetRDD
 from graphframes import *
 from typing import List
-from k_clique import degeneracy_order, k_clique
+from k_clique_module import degeneracy_order, k_clique
 
 spark = SparkSession.builder.getOrCreate()
 sc = spark.sparkContext
