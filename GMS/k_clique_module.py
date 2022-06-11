@@ -1,8 +1,8 @@
 from typing import List, Tuple, Dict, Type
 from Set import Set
-from pyspark.sql import SparkSession
 from pyspark import SparkContext
 import logging
+from graphframes import GraphFrame
 
 Graph = List[Tuple[int, Set]]
 
@@ -106,3 +106,70 @@ def k_clique_parallel(graph: Graph, k: int, set_class: Type[Set], sc: SparkConte
     logging.info("Start processing")
 
     return sc.parallelize(new_graph).map(lambda vertex: count(2, vertex_id_to_vertex, vertex[1], vertex[0])).sum()
+
+
+# GraphFrame k_clique
+
+def split_vertexes_graph_frame(graph: GraphFrame, k: int):
+    to_remove = graph.filterVertices("cardinality" < k-1)
+    stayed = graph.filterVertices("cardinality" >= k-1)
+
+    return (to_remove, stayed)
+
+
+def degeneracy_order_graph_frame(graph: GraphFrame, k: int):
+
+    while graph.vertices.count() != 0:
+        to_remove = graph.filterVertices(f"cardinality < {k-1}")
+
+        if to_remove.vertices.count() == 0:
+            return graph
+        graph = graph.filterVertices(f"cardinality >= {k-1}")
+
+    return graph
+
+
+def dir_graph_frame(graph: GraphFrame):
+    return graph.filterEdges("src < dst")
+
+
+def get_neighbors_graph_frame(g: GraphFrame, vertex: int) -> List[int]:
+    neighbors = g.filterEdges(
+        f"src = {vertex}").edges.select("dst").collect()
+
+    return [vertex["dst"] for vertex in neighbors]
+
+
+def k_clique_graph_frame(graph: GraphFrame, k: int):
+
+    def count(i: int, g: GraphFrame, c_i: list):
+        if i == k:
+            return len(c_i)
+        else:
+            ci = 0
+            for v in c_i:
+                v_neighbors = get_neighbors_graph_frame(g, v)
+
+                c_i1 = [value for value in c_i if value in v_neighbors]
+                ci += count(i+1, g, c_i1)
+            return ci
+
+    new_graph = degeneracy_order_graph_frame(graph, k)
+
+    new_graph = dir_graph_frame(new_graph).cache()
+
+    vertices = [vertex["id"]
+                for vertex in new_graph.vertices.select("id").collect()]
+
+    result_sum = 0
+
+    logging.info("Start processing")
+
+    percentage = graph.vertices.count() / 100
+
+    for vertex in vertices:
+        log_percentage(int(vertex), percentage)
+        neighbors = get_neighbors_graph_frame(new_graph, vertex)
+        result_sum += count(2, new_graph, neighbors)
+
+    return result_sum

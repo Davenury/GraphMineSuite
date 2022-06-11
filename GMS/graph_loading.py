@@ -1,9 +1,9 @@
 from os import listdir
 from re import S
+from graphframes import GraphFrame
 from Set import Set
 from typing import List, Type, Tuple
-from pyspark.sql import DataFrame, Row
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, Row, SparkSession, SQLContext
 
 
 Graph = List[Tuple[int, Set]]
@@ -86,6 +86,9 @@ class Vertex:
     def to_vectorset(self, set_class: Type[Set]) -> Tuple[int, Set]:
         return (self.id, set_class.from_array(self.neighbours))
 
+    def to_vertex_and_edges(self) -> Tuple[Tuple[int, int], List[Tuple[int, int]]]:
+        return ((self.id, len(self.neighbours)), [(self.id, neigh) for neigh in self.neighbours])
+
 
 def read_graph_from_path(path: str, set_class: Type[Set]) -> Graph:
     files = [file.split(".") for file in listdir(path)]
@@ -101,3 +104,24 @@ def read_graph_dataframe_from_path(path: str) -> DataFrame:
         [Vertex(vertex_id, path).to_data_frame_row()
          for vertex_id in vertexes_ids]
     )
+
+
+def read_graph_frame_from_path(path: str) -> GraphFrame:
+    spark = SparkSession.builder.getOrCreate()
+    sc = spark.sparkContext
+    sql_context = SQLContext(sc)
+    files = [file.split(".") for file in listdir(path)]
+    vertexes_ids = [int(file[0]) for file in files if file[1] == "edges"]
+    vertexes_and_edges = [
+        Vertex(vertex_id, path).to_vertex_and_edges() for vertex_id in vertexes_ids]
+    vertexes = []
+    edges = []
+    for (v, e) in vertexes_and_edges:
+        vertexes.append(v)
+        edges += e
+
+    v = sql_context.createDataFrame(vertexes, ["id", "cardinality"])
+
+    e = sql_context.createDataFrame(edges, ["src", "dst"])
+
+    return GraphFrame(v, e)
