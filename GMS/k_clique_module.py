@@ -81,6 +81,9 @@ def k_clique(graph: Graph, k: int, set_class: Type[Set]):
 
     new_graph = dir(new_graph, set_class)
 
+    new_graph = [(vertex_id, vertex.clone())
+                 for (vertex_id, vertex) in new_graph]
+
     vertex_id_to_vertex = {
         vertex_id: vertex for vertex_id, vertex in new_graph}
 
@@ -99,6 +102,9 @@ def k_clique_parallel(graph: Graph, k: int, set_class: Type[Set], sc: SparkConte
     new_graph = degeneracy_order(graph, k, set_class)
 
     new_graph = dir(new_graph, set_class)
+
+    new_graph = [(vertex_id, vertex.clone())
+                 for (vertex_id, vertex) in new_graph]
 
     vertex_id_to_vertex = {
         vertex_id: vertex for vertex_id, vertex in new_graph}
