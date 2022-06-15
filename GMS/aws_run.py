@@ -9,6 +9,8 @@ import shutil
 from distutils.dir_util import copy_tree
 import logging
 from pyroaring import BitMap
+import os
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages graphframes:graphframes:0.6.0-spark2.3-s_2.11 pyspark-shell'
 
 logging.basicConfig(level=logging.INFO)
 
@@ -87,14 +89,20 @@ def run_twitter_graph(k):
     from VectorSetRoaring import VectorSetRoaring
     from VectorSetRDD import VectorSetRDD
     from VectorSetDataFrame import VectorSetDataFrame
-    from graph_loading import read_graph_from_path
-    from k_clique_module import k_clique, k_clique_parallel
+    from graph_loading import read_graph_from_path, read_graph_frame_from_path
+    from k_clique_module import k_clique, k_clique_parallel, k_clique_graph_frame
 
     graph = read_graph_from_path("./twitter", VectorSetRoaring)
     measure_time(
         lambda: k_clique(graph, k, VectorSetRoaring), "VectorSetRoaring", "k_clique")
     measure_time(
         lambda: k_clique_parallel(graph, k, VectorSetRoaring, sc), "VectorSetRoaring", "k_clique_parallel")
+
+    graph = read_graph_frame_from_path("./twitter")
+    measure_time(
+        lambda: k_clique_graph_frame(
+            graph, k), "GraphFrame", "k_clique_graph_frame"
+    )
 
     graph = read_graph_from_path("./twitter", VectorSetRDD)
     measure_time(

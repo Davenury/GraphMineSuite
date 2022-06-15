@@ -15,6 +15,7 @@ pip3 install six
 pip3 install tenacity
 pip3 install toml
 pip3 install boto3
+pip3 install graphframes
 
 path=/home/hadoop
 
