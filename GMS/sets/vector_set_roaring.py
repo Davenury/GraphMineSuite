@@ -2,7 +2,7 @@ from __future__ import annotations
 import imp
 from typing import List
 from pyspark import RDD, SparkContext
-from Set import Set
+from .abstract_set import Set
 from pyspark.sql import SparkSession
 from pyroaring import BitMap
 

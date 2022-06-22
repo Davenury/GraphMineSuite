@@ -16,8 +16,4 @@ pip3 install tenacity
 pip3 install toml
 pip3 install boto3
 pip3 install graphframes
-
-path=/home/hadoop
-
-sudo aws s3 cp --recursive s3://gms-us-east-1/GMS $path
-sudo aws s3 cp --recursive s3://gms-us-east-1/twitter $path/twitter
+pip3 install smart-open

@@ -1,15 +1,14 @@
 import boto3
-import sys
 from inspect import getfile
 from graph_loading import read_graph_from_path, read_graph_frame_from_path
 from time import time
 from k_clique_module import k_clique, k_clique_parallel, k_clique_graph_frame
 import k_clique_module
 from typing import List, Callable, Tuple, Type
-from VectorSetRoaring import VectorSetRoaring
-from VectorSetRDD import VectorSetRDD
-from VectorSetDataFrame import VectorSetDataFrame
-from Set import Set
+from sets.vector_set_roaring import VectorSetRoaring
+from sets.vector_set_rdd import VectorSetRDD
+from sets.vector_set_dataframe import VectorSetDataFrame
+from sets.abstract_set import Set
 from pyspark.sql import SparkSession, SQLContext
 from graphframes import GraphFrame
 import logging

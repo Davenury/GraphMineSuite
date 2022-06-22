@@ -1,5 +1,5 @@
 from typing import List, Tuple, Dict, Type
-from Set import Set
+from sets.abstract_set import Set
 from pyspark import SparkContext
 import logging
 from graphframes import GraphFrame

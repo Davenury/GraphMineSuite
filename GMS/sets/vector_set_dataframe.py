@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import List
 from pandas import DataFrame
 from pyspark.sql import Row
-from Set import Set
+from .abstract_set import Set
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, IntegerType
 
