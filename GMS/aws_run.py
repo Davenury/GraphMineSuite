@@ -1,46 +1,19 @@
+from pkgutil import iter_modules
 import boto3
 from inspect import getfile
 from time import time
-from typing import List, Callable, Tuple, Type
+from typing import Callable
 from pyspark import SparkContext
 import pathlib
 import os
 import shutil
 from distutils.dir_util import copy_tree
 import logging
-from pyroaring import BitMap
 import os
+import sys
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages graphframes:graphframes:0.6.0-spark2.3-s_2.11 pyspark-shell'
 
 logging.basicConfig(level=logging.INFO)
-
-path = pathlib.Path(__file__).parent.resolve()
-current_directory = pathlib.Path().resolve()
-source = "/home/hadoop"
-result = []
-for file in os.listdir(source):
-    if file.endswith(".py"):
-        returned = shutil.copy(f"{source}/{file}",
-                               path.__str__()+"/")
-        result.append(returned)
-
-copy_tree(f"{source}/twitter", path.__str__()+"/twitter")
-copy_tree(f"{source}/twitter", current_directory.__str__()+"/twitter")
-
-
-print(path.absolute().__str__())
-print(os.listdir(path.__str__()))
-current_directory = pathlib.Path().resolve()
-print(current_directory.__str__())
-print(os.listdir(current_directory.__str__()))
-print("results: ", "\n".join(result))
-
-# try:
-#     from pip._internal.operations import freeze
-# except ImportError:  # pip < 10.0
-#     from pip.operations import freeze
-
-# print("Freeze: ", "\n".join(list(freeze.freeze())))
 
 
 sc = SparkContext(appName="GraphProcessing")
@@ -48,36 +21,29 @@ sc = SparkContext(appName="GraphProcessing")
 s3 = boto3.resource('s3')
 
 
-def load_spark_context():
-    from Set import Set
-    from VectorSetRoaring import VectorSetRoaring
-    from VectorSetRDD import VectorSetRDD
-    import k_clique_module
+def load_GMS_module(bucket: str):
+    # Download zip module
+    s3.Bucket(bucket).download_file("GMS.zip", "./GMS.zip")
 
-    def add_class(set_class: Type[Set]):
-        sc.addFile(getfile(set_class))
+    # Add module to spark context
+    sc.addPyFile("./GMS.zip")
 
-    add_class(Set)
-    add_class(VectorSetRDD)
-    add_class(VectorSetRoaring)
-    add_class(BitMap)
-    sc.addFile(k_clique_module.__file__)
+    # Load pyroaring
+    from pyroaring import BitMap
+    sc.addPyFile(getfile(BitMap))
+
+    from sets.vector_set_rdd import VectorSetRDD
+
     VectorSetRDD.set_spark_context(sc)
 
 
-load_spark_context()
-# 0  -  1
-# |  \
-# 3  -  2
-
-
-def measure_time(function: Callable[[], int], class_name: str, function_name: str):
+def measure_time(function: Callable[[], int], class_name: str, function_name: str, bucket: str):
     start_time = time()
     result = function()
     end_time = time()
 
     object = s3.Object(
-        'gms-us-east-1', f'results/{class_name}/{function_name}/result.txt')
+        bucket, f'results/{class_name}/{function_name}/result.txt')
 
     result = f"{class_name} {function_name} \n result: {result} time: {end_time-start_time}".encode(
         "ascii")
@@ -85,35 +51,55 @@ def measure_time(function: Callable[[], int], class_name: str, function_name: st
     print(result)
 
 
-def run_twitter_graph(k):
-    from VectorSetRoaring import VectorSetRoaring
-    from VectorSetRDD import VectorSetRDD
-    from VectorSetDataFrame import VectorSetDataFrame
+def run_twitter_graph(k: int, bucket: str, dataset_path: str = "./twitter"):
+    from sets.vector_set_roaring import VectorSetRoaring
+    from sets.vector_set_rdd import VectorSetRDD
+    from sets.vector_set_dataframe import VectorSetDataFrame
     from graph_loading import read_graph_from_path, read_graph_frame_from_path
     from k_clique_module import k_clique, k_clique_parallel, k_clique_graph_frame
 
-    graph = read_graph_from_path("./twitter", VectorSetRoaring)
+    graph = read_graph_from_path(dataset_path, VectorSetRoaring)
     measure_time(
-        lambda: k_clique(graph, k, VectorSetRoaring), "VectorSetRoaring", "k_clique")
+        lambda: k_clique(graph, k, VectorSetRoaring),
+        "VectorSetRoaring",
+        "k_clique",
+        bucket
+    )
     measure_time(
-        lambda: k_clique_parallel(graph, k, VectorSetRoaring, sc), "VectorSetRoaring", "k_clique_parallel")
-
-    graph = read_graph_frame_from_path("./twitter")
-    measure_time(
-        lambda: k_clique_graph_frame(
-            graph, k), "GraphFrame", "k_clique_graph_frame"
+        lambda: k_clique_parallel(graph, k, VectorSetRoaring, sc),
+        "VectorSetRoaring",
+        "k_clique_parallel",
+        bucket
     )
 
-    graph = read_graph_from_path("./twitter", VectorSetRDD)
+    graph = read_graph_frame_from_path(dataset_path)
     measure_time(
-        lambda: k_clique(graph, k, VectorSetRDD), "VectorSetRDD", "k_clique")
+        lambda: k_clique_graph_frame(graph, k),
+        "GraphFrame",
+        "k_clique_graph_frame",
+        bucket
+    )
 
-    graph = read_graph_from_path("./twitter", VectorSetDataFrame)
+    graph = read_graph_from_path(dataset_path, VectorSetRDD)
     measure_time(
-        lambda: k_clique(
-            graph, k, VectorSetDataFrame), "VectorSetDataFrame", "k_clique"
+        lambda: k_clique(graph, k, VectorSetRDD),
+        "VectorSetRDD",
+        "k_clique",
+        bucket
+    )
+
+    graph = read_graph_from_path(dataset_path, VectorSetDataFrame)
+    measure_time(
+        lambda: k_clique(graph, k, VectorSetDataFrame),
+        "VectorSetDataFrame",
+        "k_clique",
+        bucket
     )
 
 
 if __name__ == '__main__':
-    run_twitter_graph(5)
+    args = sys.argv
+    dataset_path = args[1]
+    bucket = args[2]
+    load_GMS_module(bucket)
+    run_twitter_graph(5, bucket, dataset_path)

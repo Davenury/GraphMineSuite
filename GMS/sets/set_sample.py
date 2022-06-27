@@ -1,6 +1,6 @@
 from pyspark.sql import Row
 from pyspark.sql import SparkSession
-from VectorSet import VectorSet
+from .vector_set import VectorSet
 
 spark = SparkSession.builder.getOrCreate()
 # 1  -  2
