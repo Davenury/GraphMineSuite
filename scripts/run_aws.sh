@@ -5,7 +5,7 @@ dataset="twitter"
 
 directory=$(dirname $0)
 
-(cd ./GMS && zip -r - *) >GMS.zip
+(cd ../GMS && zip -r - *) >GMS.zip
 
 echo $directory
 aws s3 mb s3://$bucket
